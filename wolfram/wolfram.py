@@ -35,17 +35,20 @@ class Wolfram(commands.Cog):
         query = " ".join(question)
         payload = {"input": query, "appid": api_key}
         headers = {"user-agent": "Red-cog/2.0.0"}
-        async with self.session.get(url, params=payload, headers=headers) as r:
-            result = await r.text()
-        root = ET.fromstring(result)
-        a = []
-        for pt in root.findall(".//plaintext"):
-            if pt.text:
-                a.append(pt.text.capitalize())
+        async with ctx.typing():
+            async with self.session.get(url, params=payload, headers=headers) as r:
+                result = await r.text()
+            root = ET.fromstring(result)
+            a = []
+            for pt in root.findall(".//plaintext"):
+                if pt.text:
+                    a.append(pt.text.capitalize())
         if len(a) < 1:
             message = "There is as yet insufficient data for a meaningful answer."
         else:
             message = "\n".join(a[0:3])
+            if "Current geoip location" in message:
+                message = "There is as yet insufficient data for a meaningful answer."
 
         await ctx.send(box(message))
 
@@ -68,9 +71,9 @@ class Wolfram(commands.Cog):
         units = "metric"
         query = " ".join(arguments)
         query = urllib.parse.quote(query)
-        url = f"http://api.wolframalpha.com/v1/simple?appid={api_key}&i={query}%3F&width={width}&fontsize={font_size}&layout={layout}&background={background}&foreground={foreground}&units={units}"
+        url = f"http://api.wolframalpha.com/v1/simple?appid={api_key}&i={query}%3F&width={width}&fontsize={font_size}&layout={layout}&background={background}&foreground={foreground}&units={units}&ip=127.0.0.1"
 
-        async with ctx.channel.typing():
+        async with ctx.typing():
             async with self.session.request("GET", url) as r:
                 img = await r.content.read()
                 if len(img) == 43:
@@ -104,7 +107,7 @@ class Wolfram(commands.Cog):
         }
         msg = ""
 
-        async with ctx.channel.typing():
+        async with ctx.typing():
             async with self.session.request("GET", url, params=params) as r:
                 text = await r.content.read()
                 root = ET.fromstring(text)
@@ -124,7 +127,7 @@ class Wolfram(commands.Cog):
     @checks.is_owner()
     @commands.command(name="setwolframapi", aliases=["setwolfram"])
     async def _setwolframapi(self, ctx, key: str):
-        """Set the api-key."""
+        """Set the api-key. The key is the AppID of your application on the Wolfram|Alpha Developer Portal."""
 
         if key:
             await self.config.WOLFRAM_API_KEY.set(key)

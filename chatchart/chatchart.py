@@ -7,6 +7,7 @@ import discord
 import heapq
 import os
 from io import BytesIO
+from typing import Optional
 import matplotlib
 
 matplotlib.use("agg")
@@ -79,7 +80,8 @@ class Chatchart(commands.Cog):
     @commands.guild_only()
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.channel)
-    async def chatchart(self, ctx, channel: discord.TextChannel = None, messages=5000):
+    @commands.max_concurrency(1, commands.BucketType.channel)
+    async def chatchart(self, ctx, channel: Optional[discord.TextChannel] = None, messages=5000):
         """
         Generates a pie chart, representing the last 5000 messages in the specified channel.
         """
@@ -103,9 +105,9 @@ class Chatchart(commands.Cog):
 
         for msg in history:
             if len(msg.author.display_name) >= 20:
-                short_name = "{}...".format(msg.author.display_name[:20]).replace("$", "\$")
+                short_name = "{}...".format(msg.author.display_name[:20]).replace("$", "\\$")
             else:
-                short_name = msg.author.display_name.replace("$", "\$")
+                short_name = msg.author.display_name.replace("$", "\\$")
             whole_name = "{}#{}".format(short_name, msg.author.discriminator)
             if msg.author.bot:
                 pass
