@@ -29,7 +29,7 @@ class RndStatus(commands.Cog):
 
         default_global = {
             "botstats": False,
-            "reverseprefix": False,
+            "shortprefix": False,
             "delay": "300",
             "statuses": [
                 "her Turn()",
@@ -92,7 +92,7 @@ class RndStatus(commands.Cog):
 
         saved_streamer = await self.config.streamer()
         if streamer is None:
-            return await ctx.send(f"Current Streamer: {saved_streamer}" )
+            return await ctx.send(f"Current Streamer: {saved_streamer}")
         await self.config.streamer.set(streamer)
         await ctx.send(
             "Done. Redo this command with no parameters to see the current streamer."
@@ -106,13 +106,13 @@ class RndStatus(commands.Cog):
         await ctx.send(f"Botstats toggle: {not botstats}.")
         if botstats is not False:
             await self.bot.change_presence(activity=None)
-            
+
     @rndstatus.command()
-    async def reverseprefix(self, ctx):
-        """Toggle reversing the order of set prefixes different prefix in botstats"""
-        reverseprefix = await self.config.reverseprefix()
-        await self.config.reverseprefix.set(not reverseprefix)
-        await ctx.send(f"Reverse prefix list order toggle: {not reverseprefix}")
+    async def shortprefix(self, ctx):
+        """Toggle displaying a shorter prefix in botstats"""
+        shortprefix = await self.config.shortprefix()
+        await self.config.shortprefix.set(not shortprefix)
+        await ctx.send(f"Short prefix toggle: {not shortprefix}")
 
     @rndstatus.command()
     async def delay(self, ctx, seconds: int):
@@ -153,22 +153,22 @@ class RndStatus(commands.Cog):
                     current_game = None
                 statuses = cog_settings["statuses"]
                 botstats = cog_settings["botstats"]
-                reverseprefix = cog_settings["reverseprefix"]
+                shortprefix = cog_settings["shortprefix"]
                 streamer = cog_settings["streamer"]
                 _type = cog_settings["type"]
                 delay = cog_settings["delay"]
-
                 url = f"https://www.twitch.tv/{streamer}"
                 prefix = await self.bot.get_valid_prefixes()
-
                 if botstats:
                     me = self.bot.user
-                    if reverseprefix:
-                        prefix.reverse()
+                    if shortprefix:
+                        prefix = list(sorted(prefix, key=lambda x: len(x)))[0]
                     clean_prefix = pattern.sub(f"@{me.name}", prefix[0])
                     total_users = self._user_count
                     servers = str(len(self.bot.guilds))
-                    botstatus = f"{clean_prefix}help | {total_users} users | {servers} servers"
+                    botstatus = (
+                        f"{clean_prefix}help | {total_users} users | {servers} servers"
+                    )
                     if (current_game != str(botstatus)) or current_game is None:
                         if _type == 1:
                             await self.bot.change_presence(
@@ -185,18 +185,21 @@ class RndStatus(commands.Cog):
                             if (current_game != new_status) or current_game is None:
                                 if _type == 1:
                                     await self.bot.change_presence(
-                                        activity=discord.Streaming(name=new_status, url=url)
+                                        activity=discord.Streaming(
+                                            name=new_status, url=url
+                                        )
                                     )
                                 else:
                                     await self.bot.change_presence(
-                                        activity=discord.Activity(name=new_status, type=_type)
+                                        activity=discord.Activity(
+                                            name=new_status, type=_type
+                                        )
                                     )
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 log.exception(e, exc_info=e)
             await asyncio.sleep(delay)
-            
 
     def random_status(self, guild, statuses):
         try:
